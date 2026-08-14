@@ -1,4 +1,4 @@
-﻿using ClinicAppointmentSystem.DAL.Database.Entities;
+using ClinicAppointmentSystem.DAL.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,6 +17,7 @@ namespace ClinicAppointmentSystem.DAL.Database.Config
                 .HasMaxLength(100);
 
             builder.Property(p => p.Gender)
+                .HasConversion<string>()
                 .HasMaxLength(10);
 
             builder.Property(p => p.PhoneNumber)
@@ -25,7 +26,6 @@ namespace ClinicAppointmentSystem.DAL.Database.Config
             builder.Property(p => p.Address)
                 .HasMaxLength(200);
 
-            // Relationship
             builder.HasMany(p => p.Appointments)
                 .WithOne(a => a.Patient)
                 .HasForeignKey(a => a.PatientID)

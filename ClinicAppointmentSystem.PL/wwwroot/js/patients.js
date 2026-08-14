@@ -2,26 +2,15 @@
 // (also used from the Appointments booking modal via the "+" button)
 
 let patientsTable = null;
+let patientPhoneIti = null;
 
 document.addEventListener('DOMContentLoaded', function () {
+    patientPhoneIti = initPhoneInput('PPhoneNumber');
     initPatientModalDatePicker();
 
     if (document.getElementById('patientsTable')) {
         initPatientsTable();
     }
-
-    initFormValidation('patientForm', {
-        Name: { required: true, maxlength: 100 },
-        BirthDate: { required: true },
-        Gender: { required: true },
-        PhoneNumber: { required: true, maxlength: 20 },
-        Address: { maxlength: 200 }
-    }, {
-        Name: { required: 'Patient name is required.' },
-        BirthDate: { required: 'Birth date is required.' },
-        Gender: { required: 'Gender is required.' },
-        PhoneNumber: { required: 'Phone number is required.' }
-    });
 });
 
 function initPatientModalDatePicker() {
@@ -30,15 +19,17 @@ function initPatientModalDatePicker() {
     }
 }
 
+const genderLabels = { 0: 'Male', 1: 'Female' };
+
 // GRID
 
 function initPatientsTable() {
-    patientsTable = $('#patientsTable').DataTable({
+    patientsTable = initSimpleDataTable('patientsTable', {
         ajax: { url: '/Patients/GetAll', dataSrc: 'data' },
         columns: [
             { data: 'name' },
             { data: 'birthDate', render: d => d ? new Date(d).toLocaleDateString() : '-' },
-            { data: 'gender' },
+            { data: 'gender', render: g => genderLabels[g] ?? g },
             { data: 'phoneNumber' },
             { data: 'address' },
             {
@@ -77,7 +68,7 @@ function openEditPatientModal(id) {
         setVal('PName', patient.name);
         setVal('PBirthDate', formatDateForInput(patient.birthDate));
         setVal('PGender', patient.gender);
-        setVal('PPhoneNumber', patient.phoneNumber);
+        patientPhoneIti ? patientPhoneIti.setNumber(patient.phoneNumber || '') : setVal('PPhoneNumber', patient.phoneNumber);
         setVal('PAddress', patient.address);
 
         document.getElementById('patientModalTitle').innerText = 'Edit patient';
@@ -90,32 +81,27 @@ function clearPatientForm() {
     setVal('PName', '');
     setVal('PBirthDate', '');
     setVal('PGender', '');
-    setVal('PPhoneNumber', '');
+    patientPhoneIti ? patientPhoneIti.setNumber('') : setVal('PPhoneNumber', '');
     setVal('PAddress', '');
     clearValidationErrors('patientForm');
 }
 
 function savePatient() {
-    if (!$('#patientForm').valid()) return;
+    const form = $('#patientForm');
+    if (!form.valid()) return;
+
+    if (patientPhoneIti) {
+        setVal('PPhoneNumber', patientPhoneIti.getNumber());
+    }
 
     const patientId = parseInt(getVal('PatientID')) || 0;
-    const dto = {
-        patientID: patientId,
-        name: getVal('PName'),
-        birthDate: parseDateFromInput(getVal('PBirthDate')),
-        gender: getVal('PGender'),
-        phoneNumber: getVal('PPhoneNumber'),
-        address: getVal('PAddress')
-    };
-
     const url = patientId > 0 ? '/Patients/Edit' : '/Patients/Add';
 
     $.ajax({
         url,
         method: 'POST',
-        contentType: 'application/json',
         headers: { RequestVerificationToken: getAntiForgeryToken() },
-        data: JSON.stringify(dto),
+        data: form.serialize(),
         success: function (response) {
             if (!response.success) {
                 showError(response.message);
@@ -125,10 +111,8 @@ function savePatient() {
             bootstrap.Modal.getInstance(document.getElementById('patientModal'))?.hide();
             showSuccess('Patient saved.');
 
-            // Refresh the Patients grid if it's on this page
             if (patientsTable) refreshPatientsTable();
 
-            // If we're inside the Appointments booking modal, select the new patient
             const patientAuto = $('#PatientAuto');
             if (patientId === 0 && patientAuto.length) {
                 const newPatient = response.data;

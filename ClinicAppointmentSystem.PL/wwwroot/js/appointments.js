@@ -5,24 +5,12 @@ let appointmentsTable = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     initAppointmentsTable();
-
-    initFormValidation('appointmentForm', {
-        DoctorID: { required: true },
-        PatientID: { required: true },
-        AppointmentDate: { required: true },
-        StartTime: { required: true }
-    }, {
-        DoctorID: { required: 'A doctor must be selected.' },
-        PatientID: { required: 'A patient must be selected.' },
-        AppointmentDate: { required: 'Appointment date is required.' },
-        StartTime: { required: 'A time slot must be selected.' }
-    });
 });
 
 // GRID
 
 function initAppointmentsTable() {
-    appointmentsTable = $('#appointmentsTable').DataTable({
+    appointmentsTable = initSimpleDataTable('appointmentsTable', {
         ajax: { url: '/Appointments/GetAll', dataSrc: 'data' },
         columns: [
             { data: 'doctorName' },
@@ -75,24 +63,27 @@ function openBookingModal() {
 }
 
 function clearAppointmentForm() {
-    $('#DoctorAuto').empty();
-    $('#PatientAuto').empty();
+    $('#DoctorAuto').empty().append('<option value=""></option>');
+    $('#PatientAuto').empty().append('<option value=""></option>');
     setVal('AppointmentDate', '');
     $('#StartTime').empty().append('<option value="">Select doctor and date first</option>');
     clearValidationErrors('appointmentForm');
 }
 
+// Autocomplete (Select2, remote AJAX). minimumInputLength: 0 means opening
+// the dropdown by clicking it — with no text typed — immediately searches
+// with an empty term, so the top matches show right away; typing re-queries.
 function initDoctorAutocomplete() {
     $('#DoctorAuto').select2({
         dropdownParent: $('#appointmentModal'),
-        placeholder: 'Search doctor...',
+        placeholder: 'Click to search doctors...',
         allowClear: true,
-        minimumInputLength: 1,
+        minimumInputLength: 0,
         ajax: {
             url: '/Appointments/SearchDoctors',
             dataType: 'json',
             delay: 300,
-            data: params => ({ term: params.term }),
+            data: params => ({ term: params.term || '' }),
             processResults: response => ({
                 results: (response.data || []).map(d => ({ id: d.id, text: d.text }))
             })
@@ -103,14 +94,14 @@ function initDoctorAutocomplete() {
 function initPatientAutocomplete() {
     $('#PatientAuto').select2({
         dropdownParent: $('#appointmentModal'),
-        placeholder: 'Search patient...',
+        placeholder: 'Click to search patients...',
         allowClear: true,
-        minimumInputLength: 1,
+        minimumInputLength: 0,
         ajax: {
             url: '/Appointments/SearchPatients',
             dataType: 'json',
             delay: 300,
-            data: params => ({ term: params.term }),
+            data: params => ({ term: params.term || '' }),
             processResults: response => ({
                 results: (response.data || []).map(p => ({ id: p.id, text: p.text }))
             })
@@ -172,21 +163,14 @@ function refreshFreeSlots() {
 // BOOK
 
 function bookAppointment() {
-    if (!$('#appointmentForm').valid()) return;
-
-    const dto = {
-        doctorID: parseInt($('#DoctorAuto').val()) || 0,
-        patientID: parseInt($('#PatientAuto').val()) || 0,
-        appointmentDate: parseDateFromInput(getVal('AppointmentDate')),
-        startTime: getVal('StartTime')
-    };
+    const form = $('#appointmentForm');
+    if (!form.valid()) return;
 
     $.ajax({
         url: '/Appointments/Create',
         method: 'POST',
-        contentType: 'application/json',
         headers: { RequestVerificationToken: getAntiForgeryToken() },
-        data: JSON.stringify(dto),
+        data: form.serialize(),
         success: function (response) {
             if (!response.success) {
                 showError(response.message);

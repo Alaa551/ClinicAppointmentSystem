@@ -1,5 +1,6 @@
 using ClinicAppointmentSystem.BLL.DTOs;
 using ClinicAppointmentSystem.BLL.Services.Abstraction;
+using ClinicAppointmentSystem.PL.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicAppointmentSystem.PL.Controllers
@@ -41,13 +42,25 @@ namespace ClinicAppointmentSystem.PL.Controllers
             });
         }
 
-        // POST: /Patients/Add
+        // POST: /Patients/Add  (form-encoded, bound via DataAnnotations on PatientFormViewModel)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add([FromBody] AddEditPatientRequest request)
+        public async Task<IActionResult> Add(PatientFormViewModel model)
         {
+            if (!ModelState.IsValid)
+                return Fail(GetFirstModelError());
+
             return await ExecuteAsync(async () =>
             {
+                var request = new AddEditPatientRequest
+                {
+                    PatientID = 0,
+                    Name = model.Name,
+                    BirthDate = model.BirthDate.Value,
+                    Gender = model.Gender.Value,
+                    PhoneNumber = model.PhoneNumber,
+                    Address = model.Address
+                };
                 var patient = await _patientService.AddAsync(request);
                 return (object)patient;
             });
@@ -56,10 +69,22 @@ namespace ClinicAppointmentSystem.PL.Controllers
         // POST: /Patients/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit([FromBody] AddEditPatientRequest request)
+        public async Task<IActionResult> Edit(PatientFormViewModel model)
         {
+            if (!ModelState.IsValid)
+                return Fail(GetFirstModelError());
+
             return await ExecuteAsync(async () =>
             {
+                var request = new AddEditPatientRequest
+                {
+                    PatientID = model.PatientID,
+                    Name = model.Name,
+                    BirthDate = model.BirthDate.Value,
+                    Gender = model.Gender.Value,
+                    PhoneNumber = model.PhoneNumber,
+                    Address = model.Address
+                };
                 var patient = await _patientService.EditAsync(request);
                 return (object)patient;
             });

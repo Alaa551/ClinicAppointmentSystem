@@ -1,5 +1,6 @@
 using ClinicAppointmentSystem.BLL.DTOs;
 using ClinicAppointmentSystem.BLL.Services.Abstraction;
+using ClinicAppointmentSystem.PL.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicAppointmentSystem.PL.Controllers
@@ -19,7 +20,7 @@ namespace ClinicAppointmentSystem.PL.Controllers
             return View();
         }
 
-        // GET: /Doctors/GetAll  -> feeds the grid
+        // GET: /Doctors/GetAll -> feeds the grid
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -30,7 +31,7 @@ namespace ClinicAppointmentSystem.PL.Controllers
             });
         }
 
-        // GET: /Doctors/GetById?id=5  -> feeds the edit modal
+        // GET: /Doctors/GetById?id=5 -> feeds the edit modal
         [HttpGet]
         public async Task<IActionResult> GetById(int id)
         {
@@ -41,13 +42,25 @@ namespace ClinicAppointmentSystem.PL.Controllers
             });
         }
 
-        // POST: /Doctors/Add
+        // POST: /Doctors/Add  (form-encoded, bound via DataAnnotations on DoctorFormViewModel)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Add([FromBody] AddEditDoctorRequest request)
+        public async Task<IActionResult> Add(DoctorFormViewModel model)
         {
+            if (!ModelState.IsValid)
+                return Fail(GetFirstModelError());
+
             return await ExecuteAsync(async () =>
             {
+                var request = new AddEditDoctorRequest
+                {
+                    DoctorID = 0,
+                    Name = model.Name,
+                    Specialization = model.Specialization,
+                    PhoneNumber = model.PhoneNumber,
+                    Email = model.Email,
+                    IsActive = model.IsActive
+                };
                 var doctor = await _doctorService.AddAsync(request);
                 return (object)doctor;
             });
@@ -56,10 +69,22 @@ namespace ClinicAppointmentSystem.PL.Controllers
         // POST: /Doctors/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit([FromBody] AddEditDoctorRequest request)
+        public async Task<IActionResult> Edit(DoctorFormViewModel model)
         {
+            if (!ModelState.IsValid)
+                return Fail(GetFirstModelError());
+
             return await ExecuteAsync(async () =>
             {
+                var request = new AddEditDoctorRequest
+                {
+                    DoctorID = model.DoctorID,
+                    Name = model.Name,
+                    Specialization = model.Specialization,
+                    PhoneNumber = model.PhoneNumber,
+                    Email = model.Email,
+                    IsActive = model.IsActive
+                };
                 var doctor = await _doctorService.EditAsync(request);
                 return (object)doctor;
             });

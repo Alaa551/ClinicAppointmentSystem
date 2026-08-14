@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.7.1/build/css/intlTelInput.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
@@ -44,8 +45,8 @@
         </div>
     </div>
 
-    <partial name="_DoctorModal" />
-    <partial name="_PatientModal" />
+    <partial name="_DoctorModal" model="new ClinicAppointmentSystem.PL.Models.DoctorFormViewModel()" />
+    <partial name="_PatientModal" model="new ClinicAppointmentSystem.PL.Models.PatientFormViewModel()" />
 
     <form id="__af" style="display:none">
         @Html.AntiForgeryToken()
@@ -57,7 +58,13 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.7.1/build/js/intlTelInput.min.js"></script>
+
+    <!-- jQuery Validation: works automatically off the data-val-* attributes
+         that asp-for / asp-validation-for generate from the ViewModel's
+         DataAnnotations — no manual rules needed in JS. -->
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@4.0.0/dist/jquery.validate.unobtrusive.min.js"></script>
 
     <script src="~/js/common.js"></script>
     <script src="~/js/doctors.js"></script>

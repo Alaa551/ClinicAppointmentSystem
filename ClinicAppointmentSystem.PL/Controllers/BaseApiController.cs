@@ -16,6 +16,19 @@ namespace ClinicAppointmentSystem.PL.Controllers
             return Json(new { success = false, message });
         }
 
+        protected string GetFirstModelError()
+        {
+            foreach (var entry in ModelState.Values)
+            {
+                foreach (var error in entry.Errors)
+                {
+                    if (!string.IsNullOrWhiteSpace(error.ErrorMessage))
+                        return error.ErrorMessage;
+                }
+            }
+            return "Please check the form for errors.";
+        }
+
         protected async Task<IActionResult> ExecuteAsync(Func<Task<object>> action)
         {
             try

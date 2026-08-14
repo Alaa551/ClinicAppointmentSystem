@@ -17,8 +17,7 @@ namespace ClinicAppointmentSystem.BLL.Validation
                 .LessThan(DateTime.Today).WithMessage("Birth date must be in the past.");
 
             RuleFor(x => x.Gender)
-                .NotEmpty().WithMessage("Gender is required.")
-                .MaximumLength(10);
+                .IsInEnum().WithMessage("Select a valid gender.");
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")

@@ -2,29 +2,20 @@
 // (also used from the Appointments booking modal via the "+" button)
 
 let doctorsTable = null;
+let doctorPhoneIti = null;
 
 document.addEventListener('DOMContentLoaded', function () {
+    doctorPhoneIti = initPhoneInput('DoctorPhoneNumber');
+
     if (document.getElementById('doctorsTable')) {
         initDoctorsTable();
     }
-
-    initFormValidation('doctorForm', {
-        Name: { required: true, maxlength: 100 },
-        Specialization: { required: true, maxlength: 100 },
-        PhoneNumber: { required: true, maxlength: 20 },
-        Email: { required: true, email: true, maxlength: 100 }
-    }, {
-        Name: { required: 'Doctor name is required.' },
-        Specialization: { required: 'Specialization is required.' },
-        PhoneNumber: { required: 'Phone number is required.' },
-        Email: { required: 'Email is required.', email: 'Enter a valid email address.' }
-    });
 });
 
 // GRID
 
 function initDoctorsTable() {
-    doctorsTable = $('#doctorsTable').DataTable({
+    doctorsTable = initSimpleDataTable('doctorsTable', {
         ajax: { url: '/Doctors/GetAll', dataSrc: 'data' },
         columns: [
             { data: 'name' },
@@ -72,7 +63,7 @@ function openEditDoctorModal(id) {
         setVal('DoctorID', doctor.doctorID);
         setVal('Name', doctor.name);
         setVal('Specialization', doctor.specialization);
-        setVal('PhoneNumber', doctor.phoneNumber);
+        doctorPhoneIti ? doctorPhoneIti.setNumber(doctor.phoneNumber || '') : setVal('DoctorPhoneNumber', doctor.phoneNumber);
         setVal('Email', doctor.email);
         $('#IsActive').prop('checked', doctor.isActive);
 
@@ -85,33 +76,28 @@ function clearDoctorForm() {
     setVal('DoctorID', '0');
     setVal('Name', '');
     setVal('Specialization', '');
-    setVal('PhoneNumber', '');
+    doctorPhoneIti ? doctorPhoneIti.setNumber('') : setVal('DoctorPhoneNumber', '');
     setVal('Email', '');
     $('#IsActive').prop('checked', true);
     clearValidationErrors('doctorForm');
 }
 
 function saveDoctor() {
-    if (!$('#doctorForm').valid()) return;
+    const form = $('#doctorForm');
+    if (!form.valid()) return;
+
+    if (doctorPhoneIti) {
+        setVal('DoctorPhoneNumber', doctorPhoneIti.getNumber());
+    }
 
     const doctorId = parseInt(getVal('DoctorID')) || 0;
-    const dto = {
-        doctorID: doctorId,
-        name: getVal('Name'),
-        specialization: getVal('Specialization'),
-        phoneNumber: getVal('PhoneNumber'),
-        email: getVal('Email'),
-        isActive: $('#IsActive').is(':checked')
-    };
-
     const url = doctorId > 0 ? '/Doctors/Edit' : '/Doctors/Add';
 
     $.ajax({
         url,
         method: 'POST',
-        contentType: 'application/json',
         headers: { RequestVerificationToken: getAntiForgeryToken() },
-        data: JSON.stringify(dto),
+        data: form.serialize(),
         success: function (response) {
             if (!response.success) {
                 showError(response.message);
@@ -121,10 +107,8 @@ function saveDoctor() {
             bootstrap.Modal.getInstance(document.getElementById('doctorModal'))?.hide();
             showSuccess('Doctor saved.');
 
-            // Refresh the Doctors grid if it's on this page
             if (doctorsTable) refreshDoctorsTable();
 
-            // If we're inside the Appointments booking modal, select the new doctor
             const doctorAuto = $('#DoctorAuto');
             if (doctorId === 0 && doctorAuto.length) {
                 const newDoctor = response.data;

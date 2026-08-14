@@ -1,5 +1,6 @@
 using ClinicAppointmentSystem.BLL.DTOs;
 using ClinicAppointmentSystem.BLL.Services.Abstraction;
+using ClinicAppointmentSystem.PL.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicAppointmentSystem.PL.Controllers
@@ -9,6 +10,8 @@ namespace ClinicAppointmentSystem.PL.Controllers
         private readonly IAppointmentService _appointmentService;
         private readonly IDoctorService _doctorService;
         private readonly IPatientService _patientService;
+
+        private const int AutoCompleteMaxResults = 10;
 
         public AppointmentsController(
             IAppointmentService appointmentService,
@@ -37,26 +40,27 @@ namespace ClinicAppointmentSystem.PL.Controllers
             });
         }
 
-        // GET: /Appointments/SearchDoctors?term=ah -> Select2 remote source
+        // GET: /Appointments/SearchDoctors?term=ah -> Select2 remote source.
+        // Empty term (dropdown opened without typing) still returns up to 10 active doctors.
         [HttpGet]
         public async Task<IActionResult> SearchDoctors(string term)
         {
             return await ExecuteAsync(async () =>
             {
                 var doctors = await _doctorService.SearchActiveDoctorsAutoComplete(term);
-                var results = doctors.Select(d => new { id = d.ID, text = d.Name });
+                var results = doctors.Take(AutoCompleteMaxResults).Select(d => new { id = d.ID, text = d.Name });
                 return (object)results;
             });
         }
 
-        // GET: /Appointments/SearchPatients?term=sa -> Select2 remote source
+        // GET: /Appointments/SearchPatients?term=sa -> Select2 remote source.
         [HttpGet]
         public async Task<IActionResult> SearchPatients(string term)
         {
             return await ExecuteAsync(async () =>
             {
                 var patients = await _patientService.SearchPatientsAutoComplete(term);
-                var results = patients.Select(p => new { id = p.ID, text = p.Name });
+                var results = patients.Take(AutoCompleteMaxResults).Select(p => new { id = p.ID, text = p.Name });
                 return (object)results;
             });
         }
@@ -77,13 +81,23 @@ namespace ClinicAppointmentSystem.PL.Controllers
             });
         }
 
-        // POST: /Appointments/Create
+        // POST: /Appointments/Create  (form-encoded, bound via DataAnnotations on AppointmentFormViewModel)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request)
+        public async Task<IActionResult> Create(AppointmentFormViewModel model)
         {
+            if (!ModelState.IsValid)
+                return Fail(GetFirstModelError());
+
             return await ExecuteAsync(async () =>
             {
+                var request = new CreateAppointmentRequest
+                {
+                    DoctorID = model.DoctorID,
+                    PatientID = model.PatientID,
+                    AppointmentDate = model.AppointmentDate.Value,
+                    StartTime = TimeSpan.Parse(model.StartTime)
+                };
                 var appointment = await _appointmentService.CreateAppointmentAsync(request);
                 return (object)appointment;
             });

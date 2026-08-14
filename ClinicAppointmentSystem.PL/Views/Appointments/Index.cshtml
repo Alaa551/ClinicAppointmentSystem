@@ -1,3 +1,4 @@
+@model ClinicAppointmentSystem.PL.Models.AppointmentFormViewModel
 @{
     ViewData["Title"] = "Appointments";
 }
@@ -10,19 +11,21 @@
 </div>
 
 <div class="clinic-card">
-    <table id="appointmentsTable" class="table table-hover align-middle w-100">
-        <thead>
-            <tr>
-                <th>Doctor</th>
-                <th>Patient</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th class="text-end">Actions</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <div class="table-responsive">
+        <table id="appointmentsTable" class="table table-hover align-middle w-100">
+            <thead>
+                <tr>
+                    <th>Doctor</th>
+                    <th>Patient</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th class="no-sort text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Booking modal -->
@@ -36,39 +39,39 @@
             <div class="modal-body">
                 <form id="appointmentForm">
                     <div class="mb-3">
-                        <label class="form-label">Doctor</label>
+                        <label asp-for="DoctorID" class="form-label"></label>
                         <div class="d-flex gap-2">
-                            <select id="DoctorAuto" name="DoctorID" class="form-control flex-grow-1" style="width:100%"></select>
+                            <select asp-for="DoctorID" id="DoctorAuto" class="form-control flex-grow-1" style="width:100%"></select>
                             <button type="button" class="btn btn-outline-secondary" onclick="openAddDoctorModal()" title="Add new doctor">
                                 <i class="ti ti-plus"></i>
                             </button>
                         </div>
-                        <span class="text-danger small" data-valmsg-for="DoctorID"></span>
+                        <span asp-validation-for="DoctorID" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Patient</label>
+                        <label asp-for="PatientID" class="form-label"></label>
                         <div class="d-flex gap-2">
-                            <select id="PatientAuto" name="PatientID" class="form-control flex-grow-1" style="width:100%"></select>
+                            <select asp-for="PatientID" id="PatientAuto" class="form-control flex-grow-1" style="width:100%"></select>
                             <button type="button" class="btn btn-outline-secondary" onclick="openAddPatientModal()" title="Add new patient">
                                 <i class="ti ti-plus"></i>
                             </button>
                         </div>
-                        <span class="text-danger small" data-valmsg-for="PatientID"></span>
+                        <span asp-validation-for="PatientID" class="text-danger small"></span>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="text" id="AppointmentDate" name="AppointmentDate" class="form-control" placeholder="dd-mm-yyyy" />
-                            <span class="text-danger small" data-valmsg-for="AppointmentDate"></span>
+                            <label asp-for="AppointmentDate" class="form-label"></label>
+                            <input asp-for="AppointmentDate" class="form-control" id="AppointmentDate" placeholder="dd-mm-yyyy" autocomplete="off" />
+                            <span asp-validation-for="AppointmentDate" class="text-danger small"></span>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Time slot</label>
-                            <select id="StartTime" name="StartTime" class="form-select">
+                            <label asp-for="StartTime" class="form-label"></label>
+                            <select asp-for="StartTime" id="StartTime" class="form-select">
                                 <option value="">Select doctor and date first</option>
                             </select>
-                            <span class="text-danger small" data-valmsg-for="StartTime"></span>
+                            <span asp-validation-for="StartTime" class="text-danger small"></span>
                         </div>
                     </div>
                 </form>
