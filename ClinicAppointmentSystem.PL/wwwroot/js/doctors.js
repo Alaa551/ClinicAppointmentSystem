@@ -1,0 +1,170 @@
+// Doctor grid (Doctors/Index) + the shared Add/Edit doctor modal
+// (also used from the Appointments booking modal via the "+" button)
+
+let doctorsTable = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (document.getElementById('doctorsTable')) {
+        initDoctorsTable();
+    }
+
+    initFormValidation('doctorForm', {
+        Name: { required: true, maxlength: 100 },
+        Specialization: { required: true, maxlength: 100 },
+        PhoneNumber: { required: true, maxlength: 20 },
+        Email: { required: true, email: true, maxlength: 100 }
+    }, {
+        Name: { required: 'Doctor name is required.' },
+        Specialization: { required: 'Specialization is required.' },
+        PhoneNumber: { required: 'Phone number is required.' },
+        Email: { required: 'Email is required.', email: 'Enter a valid email address.' }
+    });
+});
+
+// GRID
+
+function initDoctorsTable() {
+    doctorsTable = $('#doctorsTable').DataTable({
+        ajax: { url: '/Doctors/GetAll', dataSrc: 'data' },
+        columns: [
+            { data: 'name' },
+            { data: 'specialization' },
+            { data: 'phoneNumber' },
+            { data: 'email' },
+            {
+                data: 'isActive',
+                render: active => active
+                    ? '<span class="badge badge-active">Active</span>'
+                    : '<span class="badge badge-inactive">Inactive</span>'
+            },
+            {
+                data: 'doctorID',
+                orderable: false,
+                className: 'text-end',
+                render: id => `
+                    <i class="ti ti-edit action-icon me-3" onclick="openEditDoctorModal(${id})" title="Edit"></i>
+                    <i class="ti ti-trash action-icon danger" onclick="confirmDeleteDoctor(${id})" title="Delete"></i>`
+            }
+        ]
+    });
+}
+
+function refreshDoctorsTable() {
+    doctorsTable?.ajax.reload(null, false);
+}
+
+// ADD / EDIT (modal is shared — lives in _Layout via _DoctorModal partial)
+
+function openAddDoctorModal() {
+    clearDoctorForm();
+    document.getElementById('doctorModalTitle').innerText = 'Add doctor';
+    new bootstrap.Modal(document.getElementById('doctorModal')).show();
+}
+
+function openEditDoctorModal(id) {
+    $.get('/Doctors/GetById', { id }, function (response) {
+        if (!response.success) {
+            showError(response.message);
+            return;
+        }
+
+        const doctor = response.data;
+        setVal('DoctorID', doctor.doctorID);
+        setVal('Name', doctor.name);
+        setVal('Specialization', doctor.specialization);
+        setVal('PhoneNumber', doctor.phoneNumber);
+        setVal('Email', doctor.email);
+        $('#IsActive').prop('checked', doctor.isActive);
+
+        document.getElementById('doctorModalTitle').innerText = 'Edit doctor';
+        new bootstrap.Modal(document.getElementById('doctorModal')).show();
+    }).fail(() => showError('Could not load doctor.'));
+}
+
+function clearDoctorForm() {
+    setVal('DoctorID', '0');
+    setVal('Name', '');
+    setVal('Specialization', '');
+    setVal('PhoneNumber', '');
+    setVal('Email', '');
+    $('#IsActive').prop('checked', true);
+    clearValidationErrors('doctorForm');
+}
+
+function saveDoctor() {
+    if (!$('#doctorForm').valid()) return;
+
+    const doctorId = parseInt(getVal('DoctorID')) || 0;
+    const dto = {
+        doctorID: doctorId,
+        name: getVal('Name'),
+        specialization: getVal('Specialization'),
+        phoneNumber: getVal('PhoneNumber'),
+        email: getVal('Email'),
+        isActive: $('#IsActive').is(':checked')
+    };
+
+    const url = doctorId > 0 ? '/Doctors/Edit' : '/Doctors/Add';
+
+    $.ajax({
+        url,
+        method: 'POST',
+        contentType: 'application/json',
+        headers: { RequestVerificationToken: getAntiForgeryToken() },
+        data: JSON.stringify(dto),
+        success: function (response) {
+            if (!response.success) {
+                showError(response.message);
+                return;
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('doctorModal'))?.hide();
+            showSuccess('Doctor saved.');
+
+            // Refresh the Doctors grid if it's on this page
+            if (doctorsTable) refreshDoctorsTable();
+
+            // If we're inside the Appointments booking modal, select the new doctor
+            const doctorAuto = $('#DoctorAuto');
+            if (doctorId === 0 && doctorAuto.length) {
+                const newDoctor = response.data;
+                const option = new Option(newDoctor.name, newDoctor.doctorID, true, true);
+                doctorAuto.append(option).trigger('change');
+            }
+        },
+        error: () => showError('Could not save doctor.')
+    });
+}
+
+// DELETE
+
+function confirmDeleteDoctor(id) {
+    Swal.fire({
+        title: 'Delete this doctor?',
+        text: 'This cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Delete',
+        cancelButtonText: 'Cancel'
+    }).then(result => {
+        if (result.isConfirmed) deleteDoctor(id);
+    });
+}
+
+function deleteDoctor(id) {
+    $.ajax({
+        url: '/Doctors/Delete',
+        method: 'POST',
+        data: { id },
+        headers: { RequestVerificationToken: getAntiForgeryToken() },
+        success: function (response) {
+            if (!response.success) {
+                showError(response.message);
+                return;
+            }
+            showSuccess('Doctor deleted.');
+            refreshDoctorsTable();
+        },
+        error: () => showError('Could not delete doctor.')
+    });
+}

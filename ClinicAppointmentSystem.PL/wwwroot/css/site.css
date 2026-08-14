@@ -1,22 +1,197 @@
-html {
-  font-size: 14px;
-}
-
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+:root {
+    --clinic-primary: #0f7a6b;
+    --clinic-primary-dark: #0b5c50;
+    --clinic-bg: #f4f7f6;
+    --clinic-sidebar: #0d3b36;
+    --clinic-sidebar-hover: #124f47;
+    --clinic-border: #e1e6e5;
+    --clinic-text-muted: #6b7a78;
 }
 
 body {
-  margin-bottom: 60px;
+    background: var(--clinic-bg);
+    font-family: "Segoe UI", system-ui, sans-serif;
+    color: #1f2d2b;
+}
+
+/* Sidebar */
+.clinic-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 220px;
+    background: var(--clinic-sidebar);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    z-index: 100;
+}
+
+.clinic-sidebar .brand {
+    color: #fff;
+    font-weight: 600;
+    font-size: 18px;
+    padding: 0 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.clinic-sidebar .brand i {
+    font-size: 20px;
+    color: #7fd9c9;
+}
+
+.clinic-sidebar .nav-link {
+    color: #cfe6e1;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s ease;
+}
+
+.clinic-sidebar .nav-link i {
+    width: 18px;
+    height: 18px;
+}
+
+.clinic-sidebar .nav-link:hover {
+    background: var(--clinic-sidebar-hover);
+    color: #fff;
+}
+
+.clinic-sidebar .nav-link.active {
+    background: var(--clinic-sidebar-hover);
+    color: #fff;
+    border-left-color: #7fd9c9;
+}
+
+/* Main content area */
+.clinic-content {
+    margin-left: 220px;
+    min-height: 100vh;
+}
+
+.clinic-topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--clinic-border);
+    padding: 16px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.clinic-topbar h4 {
+    margin: 0;
+    font-weight: 600;
+    color: #17332f;
+}
+
+.clinic-page-body {
+    padding: 24px 28px;
+}
+
+/* Cards */
+.clinic-card {
+    background: #fff;
+    border: 1px solid var(--clinic-border);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+/* Buttons */
+.btn-clinic-primary {
+    background: var(--clinic-primary);
+    border-color: var(--clinic-primary);
+    color: #fff;
+}
+
+.btn-clinic-primary:hover {
+    background: var(--clinic-primary-dark);
+    border-color: var(--clinic-primary-dark);
+    color: #fff;
+}
+
+/* Table */
+table.dataTable thead th {
+    color: var(--clinic-text-muted);
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid var(--clinic-border) !important;
+}
+
+table.dataTable tbody td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.action-icon {
+    color: var(--clinic-text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.action-icon:hover {
+    color: var(--clinic-primary);
+}
+
+.action-icon.danger:hover {
+    color: #c0392b;
+}
+
+/* Badges */
+.badge-active {
+    background: #e3f5ef;
+    color: var(--clinic-primary-dark);
+}
+
+.badge-inactive {
+    background: #fbe9e7;
+    color: #c0392b;
+}
+
+.badge-booked {
+    background: #e6f0fb;
+    color: #185fa5;
+}
+
+.badge-cancelled {
+    background: #f1efe8;
+    color: #5f5e5a;
+}
+
+.badge-completed {
+    background: #e3f5ef;
+    color: var(--clinic-primary-dark);
+}
+
+/* Modal polish */
+.modal-header {
+    border-bottom: 1px solid var(--clinic-border);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--clinic-border);
+}
+
+/* Select2 to match Bootstrap input height */
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: normal;
+    padding-left: 12px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
 }
