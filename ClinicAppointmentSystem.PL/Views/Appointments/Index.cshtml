@@ -1,0 +1,103 @@
+@model ClinicAppointmentSystem.PL.Models.AppointmentFormViewModel
+@{
+    ViewData["Title"] = "Appointments";
+}
+
+<div class="card table-list-card border-0">
+    <div class="card-body">
+        <div class="table-top">
+            <div class="search-set">
+                <div class="search-input">
+                    <input type="text" id="appointmentSearchInput" placeholder="Search..." />
+                    <span class="search-icon"><i data-feather="search"></i></span>
+                </div>
+            </div>
+            <div class="table-top-actions">
+                <button type="button" class="btn btn-primary" onclick="openBookingModal()">
+                    <i data-feather="plus-circle" class="me-2"></i>New appointment
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive product-list">
+            <table id="appointmentsTable" class="table w-100">
+                <thead>
+                    <tr>
+                        <th>Doctor</th>
+                        <th>Patient</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th class="no-sort">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Booking modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="appointmentModalTitle">New appointment</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="appointmentForm">
+                    <input type="hidden" asp-for="AppointmentID" />
+                    <div class="mb-3">
+                        <label asp-for="DoctorID" class="form-label"></label>
+                        <div class="d-flex gap-2">
+                            <select asp-for="DoctorID" id="DoctorAuto" class="form-control flex-grow-1" style="width:100%"></select>
+                            <button type="button" class="btn-add-inline" onclick="openAddDoctorModal()" title="Add new doctor">
+                                <i data-feather="plus"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="DoctorID" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PatientID" class="form-label"></label>
+                        <div class="d-flex gap-2">
+                            <select asp-for="PatientID" id="PatientAuto" class="form-control flex-grow-1" style="width:100%"></select>
+                            <button type="button" class="btn-add-inline" onclick="openAddPatientModal()" title="Add new patient">
+                                <i data-feather="plus"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="PatientID" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="AppointmentDate" class="form-label"></label>
+                                <input asp-for="AppointmentDate" class="form-control" id="AppointmentDate" placeholder="dd-mm-yyyy" autocomplete="off" />
+                                <span asp-validation-for="AppointmentDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label asp-for="StartTime" class="form-label"></label>
+                                <select asp-for="StartTime" id="StartTime" class="form-select">
+                                    <option value="">Select doctor and date first</option>
+                                </select>
+                                <span asp-validation-for="StartTime" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light" id="appointmentSaveBtn" onclick="bookAppointment()">Book appointment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/appointments.js" asp-append-version="true"></script>
+}

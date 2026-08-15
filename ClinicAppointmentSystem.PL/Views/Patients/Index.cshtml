@@ -1,0 +1,38 @@
+@{
+    ViewData["Title"] = "Patients";
+}
+
+<div class="card table-list-card border-0">
+    <div class="card-body">
+        <div class="table-top">
+            <div class="search-set">
+                <div class="search-input">
+                    <input type="text" id="patientSearchInput" placeholder="Search..." />
+                    <span class="search-icon"><i data-feather="search"></i></span>
+                </div>
+            </div>
+            <div class="table-top-actions">
+                <button type="button" class="btn btn-primary" onclick="openAddPatientModal()">
+                    <i data-feather="plus-circle" class="me-2"></i>Add patient
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive product-list">
+            <table id="patientsTable" class="table w-100">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Birth date</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th class="no-sort">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
