@@ -48,9 +48,3 @@ Doctor, Patient, Schedule, Appointment, Specialization. See [docs/erd.pdf](docs/
    This applies all migrations, including the seeded `Specializations` lookup data.
 3. Set `ClinicAppointmentSystem.PL` as the startup project and run.
 
-## Notes
-
-- Free/busy time slots are calculated from each doctor's weekly `Schedule` in 30-minute increments.
-- A doctor can only have one `Schedule` row per day of week (enforced by a unique index and at the service layer).
-- Appointments can be booked, edited, cancelled, or deleted; only appointments with status `Booked` can be edited or cancelled.
-- `appsettings.json` is excluded from version control to keep the production database connection string out of the repository — only `appsettings.Development.json` (local dev connection only) is tracked.
