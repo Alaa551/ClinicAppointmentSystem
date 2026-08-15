@@ -38,9 +38,25 @@
                         <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Address" class="form-label"></label>
-                        <input asp-for="Address" class="form-control" id="PAddress" />
-                        <span asp-validation-for="Address" class="text-danger small"></span>
+                        <label asp-for="Street" class="form-label"></label>
+                        <input asp-for="Street" class="form-control" id="PStreet" />
+                        <span asp-validation-for="Street" class="text-danger small"></span>
+                    </div>
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="mb-3">
+                                <label asp-for="City" class="form-label"></label>
+                                <input asp-for="City" class="form-control" id="PCity" />
+                                <span asp-validation-for="City" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="mb-3">
+                                <label asp-for="ZipCode" class="form-label"></label>
+                                <input asp-for="ZipCode" class="form-control" id="PZipCode" />
+                                <span asp-validation-for="ZipCode" class="text-danger small"></span>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>

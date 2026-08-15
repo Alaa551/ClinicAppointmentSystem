@@ -102,6 +102,7 @@ function clearDoctorForm() {
     doctorPhoneIti ? doctorPhoneIti.setNumber('') : setVal('DoctorPhoneNumber', '');
     setVal('Email', '');
     $('#IsActive').prop('checked', true);
+
     clearValidationErrors('doctorForm');
 }
 
@@ -110,7 +111,8 @@ function saveDoctor() {
     if (!form.valid()) return;
 
     if (doctorPhoneIti) {
-        setVal('DoctorPhoneNumber', doctorPhoneIti.getNumber());
+        const phoneEl = document.getElementById('DoctorPhoneNumber');
+        setVal('DoctorPhoneNumber', getPhoneNumberValue(doctorPhoneIti, phoneEl));
     }
 
     const doctorId = parseInt(getVal('DoctorID')) || 0;

@@ -28,7 +28,16 @@ namespace ClinicAppointmentSystem.PL.Models
         [Display(Name = "Phone number")]
         public string PhoneNumber { get; set; }
 
-        [StringLength(200)]
-        public string Address { get; set; }
+        [StringLength(150)]
+        [Display(Name = "Street")]
+        public string Street { get; set; }
+
+        [StringLength(100)]
+        [Display(Name = "City")]
+        public string City { get; set; }
+
+        [StringLength(20)]
+        [Display(Name = "Zip code")]
+        public string ZipCode { get; set; }
     }
 }

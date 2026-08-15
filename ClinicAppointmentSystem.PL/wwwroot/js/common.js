@@ -70,6 +70,33 @@ function initPhoneInput(inputId) {
     return iti;
 }
 
+function initDatePicker(selector, options) {
+    if (typeof flatpickr === 'undefined') return null;
+
+    return flatpickr(selector, Object.assign({
+        altInput: true,
+        altFormat: 'd-m-Y',
+        dateFormat: 'Y-m-d',
+        allowInput: true
+    }, options));
+}
+
+function initAutocomplete(selector, url, options) {
+    return $(selector).select2(Object.assign({
+        allowClear: true,
+        minimumInputLength: 0,
+        ajax: {
+            url: url,
+            dataType: 'json',
+            delay: 300,
+            data: params => ({ term: params.term || '' }),
+            processResults: response => ({
+                results: (response.data || []).map(x => ({ id: x.id, text: x.text }))
+            })
+        }
+    }, options));
+}
+
 function initSimpleDataTable(tableId, options) {
     const callerDrawCallback = options.drawCallback;
     const callerInitComplete = options.initComplete;
@@ -137,4 +164,12 @@ function initGridSearch(inputId, getTable) {
             if (table) table.search(value).draw();
         }, 250);
     });
+}
+
+function getPhoneNumberValue(iti, phoneInput) {
+    if (!iti) return phoneInput.value;
+    const digits = phoneInput.value.replace(/\D/g, '');
+    if (!digits) return '';
+    const dialCode = iti.getSelectedCountryData().dialCode;
+    return '+' + dialCode + digits;
 }

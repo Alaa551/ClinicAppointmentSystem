@@ -62,7 +62,9 @@ namespace ClinicAppointmentSystem.PL.Controllers
                     BirthDate = model.BirthDate.Value,
                     Gender = model.Gender.Value,
                     PhoneNumber = model.PhoneNumber,
-                    Address = model.Address
+                    Street = model.Street,
+                    City = model.City,
+                    ZipCode = model.ZipCode
                 };
                 var patient = await _patientService.AddAsync(request);
                 return Json(new
@@ -109,7 +111,9 @@ namespace ClinicAppointmentSystem.PL.Controllers
                     BirthDate = model.BirthDate.Value,
                     Gender = model.Gender.Value,
                     PhoneNumber = model.PhoneNumber,
-                    Address = model.Address
+                    Street = model.Street,
+                    City = model.City,
+                    ZipCode = model.ZipCode
                 };
                 var patient = await _patientService.EditAsync(request);
                 return Json(new

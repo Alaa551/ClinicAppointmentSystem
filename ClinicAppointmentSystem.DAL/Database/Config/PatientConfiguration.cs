@@ -23,8 +23,14 @@ namespace ClinicAppointmentSystem.DAL.Database.Config
             builder.Property(p => p.PhoneNumber)
                 .HasMaxLength(20);
 
-            builder.Property(p => p.Address)
-                .HasMaxLength(200);
+            builder.Property(p => p.Street)
+                .HasMaxLength(150);
+
+            builder.Property(p => p.City)
+                .HasMaxLength(100);
+
+            builder.Property(p => p.ZipCode)
+                .HasMaxLength(20);
 
 
             builder.HasMany(p => p.Appointments)

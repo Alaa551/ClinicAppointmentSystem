@@ -1,6 +1,5 @@
 using ClinicAppointmentSystem.BLL.DTOs;
 using FluentValidation;
-using System;
 
 namespace ClinicAppointmentSystem.BLL.Validation
 {
@@ -23,8 +22,14 @@ namespace ClinicAppointmentSystem.BLL.Validation
                 .NotEmpty().WithMessage("Phone number is required.")
                 .MaximumLength(20);
 
-            RuleFor(x => x.Address)
-                .MaximumLength(200);
+            RuleFor(x => x.Street)
+                .MaximumLength(150);
+
+            RuleFor(x => x.City)
+                .MaximumLength(100);
+
+            RuleFor(x => x.ZipCode)
+                .MaximumLength(20);
 
             RuleFor(x => x.PatientID)
                 .GreaterThanOrEqualTo(0);

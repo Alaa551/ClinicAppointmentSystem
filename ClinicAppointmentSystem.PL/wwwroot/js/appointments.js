@@ -80,7 +80,7 @@ function openEditAppointmentModal(id) {
 
         initDoctorAutocomplete();
         initPatientAutocomplete();
-        initAppointmentDatePicker();
+        const fp = initAppointmentDatePicker();
 
         const doctorOption = new Option(appointment.doctorName, appointment.doctorID, true, true);
         $('#DoctorAuto').append(doctorOption).trigger('change.select2');
@@ -88,14 +88,13 @@ function openEditAppointmentModal(id) {
         const patientOption = new Option(appointment.patientName, appointment.patientID, true, true);
         $('#PatientAuto').append(patientOption).trigger('change.select2');
 
-        setVal('AppointmentDate', formatDateForInput(appointment.appointmentDate));
+        fp.setDate(appointment.appointmentDate, false);
 
         refreshFreeSlots(appointment.startTime.substring(0, 5));
 
         new bootstrap.Modal(document.getElementById('appointmentModal')).show();
     }).fail(() => showError('Could not load appointment.'));
 }
-
 function clearAppointmentForm() {
     $('#DoctorAuto').empty().append('<option value=""></option>');
     $('#PatientAuto').empty().append('<option value=""></option>');
@@ -105,54 +104,27 @@ function clearAppointmentForm() {
 }
 
 function initDoctorAutocomplete() {
-    $('#DoctorAuto').select2({
+    initAutocomplete('#DoctorAuto', '/Appointments/SearchDoctors', {
         dropdownParent: $('#appointmentModal'),
-        placeholder: 'Click to search doctors...',
-        allowClear: true,
-        minimumInputLength: 0,
-        ajax: {
-            url: '/Appointments/SearchDoctors',
-            dataType: 'json',
-            delay: 300,
-            data: params => ({ term: params.term || '' }),
-            processResults: response => ({
-                results: (response.data || []).map(d => ({ id: d.id, text: d.text }))
-            })
-        }
+        placeholder: 'Click to search doctors...'
     }).off('change').on('change', () => refreshFreeSlots());
 }
 
 function initPatientAutocomplete() {
-    $('#PatientAuto').select2({
+    initAutocomplete('#PatientAuto', '/Appointments/SearchPatients', {
         dropdownParent: $('#appointmentModal'),
-        placeholder: 'Click to search patients...',
-        allowClear: true,
-        minimumInputLength: 0,
-        ajax: {
-            url: '/Appointments/SearchPatients',
-            dataType: 'json',
-            delay: 300,
-            data: params => ({ term: params.term || '' }),
-            processResults: response => ({
-                results: (response.data || []).map(p => ({ id: p.id, text: p.text }))
-            })
-        }
+        placeholder: 'Click to search patients...'
     });
 }
 
 function initAppointmentDatePicker() {
-    if (typeof flatpickr !== 'undefined') {
-        flatpickr('#AppointmentDate', {
-            altInput: true,
-            altFormat: 'd-m-Y',
-            dateFormat: 'Y-m-d',
-            allowInput: true,
-            minDate: 'today',
-            appendTo: document.getElementById('appointmentModal'),
-            onChange: () => $('#AppointmentDate').trigger('change')
-        });
-        $('#AppointmentDate').off('change').on('change', () => refreshFreeSlots());
-    }
+    const fp = initDatePicker('#AppointmentDate', {
+        minDate: 'today',
+        appendTo: document.getElementById('appointmentModal'),
+        onChange: () => $('#AppointmentDate').trigger('change')
+    });
+    $('#AppointmentDate').off('change').on('change', () => refreshFreeSlots());
+    return fp;
 }
 
 function refreshFreeSlots(preselectValue) {

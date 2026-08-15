@@ -30,7 +30,8 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
                 query = query.Where(p =>
                     p.Name.Contains(search) ||
                     p.PhoneNumber.Contains(search) ||
-                    p.Address.Contains(search));
+                    p.Street.Contains(search) ||
+                    p.City.Contains(search));
             }
 
             var totalCount = await query.CountAsync();
@@ -81,7 +82,9 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
             patient.BirthDate = request.BirthDate;
             patient.Gender = request.Gender;
             patient.PhoneNumber = request.PhoneNumber;
-            patient.Address = request.Address;
+            patient.Street = request.Street;
+            patient.City = request.City;
+            patient.ZipCode = request.ZipCode;
 
             _unitOfWork.Repository<Patient>().Update(patient);
             await _unitOfWork.SaveChangesAsync();

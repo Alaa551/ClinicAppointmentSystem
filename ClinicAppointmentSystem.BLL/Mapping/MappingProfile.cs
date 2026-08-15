@@ -16,7 +16,9 @@ namespace ClinicAppointmentSystem.BLL.Mapping
                 .ForMember(dest => dest.SpecializationName, opt => opt.MapFrom(src => src.Specialization.Name));
             CreateMap<AddEditDoctorRequest, Doctor>();
 
-            CreateMap<Patient, PatientDto>();
+            CreateMap<Patient, PatientDto>()
+                .ForMember(dest => dest.Age, opt => opt.MapFrom(src =>
+                    DateTime.Today.Year - src.BirthDate.Year - (DateTime.Today.DayOfYear < src.BirthDate.DayOfYear ? 1 : 0)));
             CreateMap<AddEditPatientRequest, Patient>();
 
             CreateMap<Schedule, ScheduleDto>();

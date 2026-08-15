@@ -13,9 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function initPatientModalDatePicker() {
-    if (typeof flatpickr !== 'undefined') {
-        flatpickr('#PBirthDate', { dateFormat: 'd-m-Y', allowInput: true, maxDate: 'today' });
-    }
+    initDatePicker('#PBirthDate', { maxDate: 'today' });
 }
 
 function initPatientsTable() {
@@ -24,9 +22,13 @@ function initPatientsTable() {
         columns: [
             { data: 'name' },
             { data: 'birthDate', render: d => d ? new Date(d).toLocaleDateString() : '-' },
+            { data: 'age' },
             { data: 'gender' },
             { data: 'phoneNumber' },
-            { data: 'address' },
+            {
+                data: null,
+                render: (city, type, row) => [row.street, row.city, row.zipCode].filter(Boolean).join(', ') || '-'
+            },
             {
                 data: 'patientID',
                 orderable: false,
@@ -48,9 +50,7 @@ function refreshPatientsTable() {
 
 function openAddPatientModal() {
     clearPatientForm();
-
     document.getElementById('patientModalTitle').innerText = 'Add patient';
-
     new bootstrap.Modal(document.getElementById('patientModal')).show();
 }
 
@@ -67,7 +67,9 @@ function openEditPatientModal(id) {
         setVal('PBirthDate', formatDateForInput(patient.birthDate));
         setVal('PGender', patient.gender);
         patientPhoneIti ? patientPhoneIti.setNumber(patient.phoneNumber || '') : setVal('PPhoneNumber', patient.phoneNumber);
-        setVal('PAddress', patient.address);
+        setVal('PStreet', patient.street);
+        setVal('PCity', patient.city);
+        setVal('PZipCode', patient.zipCode);
 
         document.getElementById('patientModalTitle').innerText = 'Edit patient';
         new bootstrap.Modal(document.getElementById('patientModal')).show();
@@ -80,7 +82,9 @@ function clearPatientForm() {
     setVal('PBirthDate', '');
     setVal('PGender', '');
     patientPhoneIti ? patientPhoneIti.setNumber('') : setVal('PPhoneNumber', '');
-    setVal('PAddress', '');
+    setVal('PStreet', '');
+    setVal('PCity', '');
+    setVal('PZipCode', '');
     clearValidationErrors('patientForm');
 }
 
@@ -89,7 +93,8 @@ function savePatient() {
     if (!form.valid()) return;
 
     if (patientPhoneIti) {
-        setVal('PPhoneNumber', patientPhoneIti.getNumber());
+        const phoneEl = document.getElementById('PPhoneNumber');
+        setVal('PPhoneNumber', getPhoneNumberValue(patientPhoneIti, phoneEl));
     }
 
     const patientId = parseInt(getVal('PatientID')) || 0;
