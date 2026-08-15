@@ -4,6 +4,7 @@ using ClinicAppointmentSystem.BLL.Services.Abstraction;
 using ClinicAppointmentSystem.DAL.Database.Entities;
 using ClinicAppointmentSystem.DAL.UnitOfWork;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicAppointmentSystem.BLL.Services.Implementations
 {
@@ -20,15 +21,36 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
             _validator = validator;
         }
 
-        public async Task<IEnumerable<PatientDto>> GetAllAsync()
+        public async Task<PagedResult<PatientDto>> GetAllAsync(int pageNumber, int pageSize, string search)
         {
-            var patients = await _unitOfWork.Patients.GetAllAsync();
-            return _mapper.Map<IEnumerable<PatientDto>>(patients);
+            var query = _unitOfWork.Repository<Patient>().GetAll();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(p =>
+                    p.Name.Contains(search) ||
+                    p.PhoneNumber.Contains(search) ||
+                    p.Address.Contains(search));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var patients = await query
+                .OrderBy(p => p.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<PatientDto>
+            {
+                Items = _mapper.Map<IEnumerable<PatientDto>>(patients),
+                TotalCount = totalCount
+            };
         }
 
         public async Task<PatientDto> GetByIdAsync(int id)
         {
-            var patient = await _unitOfWork.Patients.GetByIdAsync(id);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(id);
             return _mapper.Map<PatientDto>(patient);
         }
 
@@ -39,7 +61,7 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
                 throw new ValidationException(validationResult.Errors);
 
             var patient = _mapper.Map<Patient>(request);
-            await _unitOfWork.Patients.AddAsync(patient);
+            await _unitOfWork.Repository<Patient>().AddAsync(patient);
             await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<PatientDto>(patient);
@@ -51,7 +73,7 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors);
 
-            var patient = await _unitOfWork.Patients.GetByIdAsync(request.PatientID);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(request.PatientID);
             if (patient == null)
                 throw new KeyNotFoundException("Patient not found.");
 
@@ -61,7 +83,7 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
             patient.PhoneNumber = request.PhoneNumber;
             patient.Address = request.Address;
 
-            _unitOfWork.Patients.Update(patient);
+            _unitOfWork.Repository<Patient>().Update(patient);
             await _unitOfWork.SaveChangesAsync();
 
             return _mapper.Map<PatientDto>(patient);
@@ -69,23 +91,27 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
 
         public async Task DeleteAsync(int id)
         {
-            var patient = await _unitOfWork.Patients.GetByIdAsync(id);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(id);
             if (patient == null)
                 throw new KeyNotFoundException("Patient not found.");
 
-            _unitOfWork.Patients.Remove(patient);
+            _unitOfWork.Repository<Patient>().Remove(patient);
             await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<LookupModel>> SearchPatientsAutoComplete(string term)
         {
-            var patients = await _unitOfWork.Patients.SearchPatientsAutoComplete(term);
+            var query = _unitOfWork.Repository<Patient>().GetAll();
 
-            return patients.Select(p => new LookupModel
-            {
-                ID = p.PatientID,
-                Name = p.Name
-            });
+            if (!string.IsNullOrWhiteSpace(term))
+                query = query.Where(p => p.Name.Contains(term) || p.PhoneNumber.Contains(term));
+
+            var patients = await query
+                .OrderBy(p => p.Name)
+                .Take(10)
+                .ToListAsync();
+
+            return patients.Select(p => new LookupModel { ID = p.PatientID, Name = p.Name });
         }
     }
 }

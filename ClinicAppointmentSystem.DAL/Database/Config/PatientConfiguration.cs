@@ -26,6 +26,7 @@ namespace ClinicAppointmentSystem.DAL.Database.Config
             builder.Property(p => p.Address)
                 .HasMaxLength(200);
 
+
             builder.HasMany(p => p.Appointments)
                 .WithOne(a => a.Patient)
                 .HasForeignKey(a => a.PatientID)

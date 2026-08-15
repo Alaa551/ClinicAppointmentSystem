@@ -12,8 +12,9 @@ namespace ClinicAppointmentSystem.PL.Models
         public string Name { get; set; }
 
         [Required(ErrorMessage = "Specialization is required.")]
-        [StringLength(100)]
-        public string Specialization { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Specialization is required.")]
+        [Display(Name = "Specialization")]
+        public int SpecializationID { get; set; }
 
         [Required(ErrorMessage = "Phone number is required.")]
         [StringLength(20)]

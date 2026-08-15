@@ -1,17 +1,14 @@
-// Appointment grid + the booking modal (Appointments/Index)
-// Doctor/Patient add modals live in doctors.js / patients.js (shared, global)
-
 let appointmentsTable = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     initAppointmentsTable();
+    initGridSearch('appointmentSearchInput', () => appointmentsTable);
+    $('#appointmentForm').validate({ ignore: [] });
 });
-
-// GRID
 
 function initAppointmentsTable() {
     appointmentsTable = initSimpleDataTable('appointmentsTable', {
-        ajax: { url: '/Appointments/GetAll', dataSrc: 'data' },
+        ajax: { url: '/Appointments/GetAll' },
         columns: [
             { data: 'doctorName' },
             { data: 'patientName' },
@@ -24,12 +21,18 @@ function initAppointmentsTable() {
             {
                 data: 'appointmentID',
                 orderable: false,
-                className: 'text-end',
                 render: (id, type, row) => `
+                    <span class="action-btn action-btn-delete" onclick="confirmDeleteAppointment(${id})" title="Delete">
+                        <i data-feather="trash-2"></i>
+                    </span>
                     ${row.status === 'Booked'
-                        ? `<i class="ti ti-circle-x action-icon me-3" onclick="confirmCancelAppointment(${id})" title="Cancel"></i>`
-                        : ''}
-                    <i class="ti ti-trash action-icon danger" onclick="confirmDeleteAppointment(${id})" title="Delete"></i>`
+                        ? `<span class="action-btn action-btn-edit" onclick="openEditAppointmentModal(${id})" title="Edit">
+                               <i data-feather="edit"></i>
+                           </span>
+                           <span class="action-btn action-btn-cancel" onclick="confirmCancelAppointment(${id})" title="Cancel">
+                               <i data-feather="x-circle"></i>
+                           </span>`
+                        : ''}`
             }
         ]
     });
@@ -52,14 +55,45 @@ function formatTimeSpan(ts) {
     return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-// BOOKING MODAL
-
 function openBookingModal() {
     clearAppointmentForm();
+    setVal('AppointmentID', '0');
+    document.getElementById('appointmentModalTitle').innerText = 'New appointment';
+    document.getElementById('appointmentSaveBtn').innerText = 'Book appointment';
     initDoctorAutocomplete();
     initPatientAutocomplete();
     initAppointmentDatePicker();
     new bootstrap.Modal(document.getElementById('appointmentModal')).show();
+}
+
+function openEditAppointmentModal(id) {
+    $.get('/Appointments/GetById', { id }, function (response) {
+        if (!response.success) {
+            showError(response.message);
+            return;
+        }
+
+        const appointment = response.data;
+        clearAppointmentForm();
+        setVal('AppointmentID', appointment.appointmentID);
+        document.getElementById('appointmentModalTitle').innerText = 'Edit appointment';
+
+        initDoctorAutocomplete();
+        initPatientAutocomplete();
+        initAppointmentDatePicker();
+
+        const doctorOption = new Option(appointment.doctorName, appointment.doctorID, true, true);
+        $('#DoctorAuto').append(doctorOption).trigger('change.select2');
+
+        const patientOption = new Option(appointment.patientName, appointment.patientID, true, true);
+        $('#PatientAuto').append(patientOption).trigger('change.select2');
+
+        setVal('AppointmentDate', formatDateForInput(appointment.appointmentDate));
+
+        refreshFreeSlots(appointment.startTime.substring(0, 5));
+
+        new bootstrap.Modal(document.getElementById('appointmentModal')).show();
+    }).fail(() => showError('Could not load appointment.'));
 }
 
 function clearAppointmentForm() {
@@ -70,9 +104,6 @@ function clearAppointmentForm() {
     clearValidationErrors('appointmentForm');
 }
 
-// Autocomplete (Select2, remote AJAX). minimumInputLength: 0 means opening
-// the dropdown by clicking it — with no text typed — immediately searches
-// with an empty term, so the top matches show right away; typing re-queries.
 function initDoctorAutocomplete() {
     $('#DoctorAuto').select2({
         dropdownParent: $('#appointmentModal'),
@@ -88,7 +119,7 @@ function initDoctorAutocomplete() {
                 results: (response.data || []).map(d => ({ id: d.id, text: d.text }))
             })
         }
-    }).off('change').on('change', refreshFreeSlots);
+    }).off('change').on('change', () => refreshFreeSlots());
 }
 
 function initPatientAutocomplete() {
@@ -112,25 +143,25 @@ function initPatientAutocomplete() {
 function initAppointmentDatePicker() {
     if (typeof flatpickr !== 'undefined') {
         flatpickr('#AppointmentDate', {
-            dateFormat: 'd-m-Y',
+            altInput: true,
+            altFormat: 'd-m-Y',
+            dateFormat: 'Y-m-d',
             allowInput: true,
             minDate: 'today',
             appendTo: document.getElementById('appointmentModal'),
             onChange: () => $('#AppointmentDate').trigger('change')
         });
-        $('#AppointmentDate').off('change').on('change', refreshFreeSlots);
+        $('#AppointmentDate').off('change').on('change', () => refreshFreeSlots());
     }
 }
 
-// FREE SLOTS (depends on doctor + date both being selected)
-
-function refreshFreeSlots() {
+function refreshFreeSlots(preselectValue) {
     const doctorId = $('#DoctorAuto').val();
-    const date = parseDateFromInput(getVal('AppointmentDate'));
+    const date = getVal('AppointmentDate');
+    const appointmentId = parseInt(getVal('AppointmentID')) || 0;
     const slotSelect = $('#StartTime');
 
     slotSelect.empty();
-
     if (!doctorId || !date) {
         slotSelect.append('<option value="">Select doctor and date first</option>');
         return;
@@ -138,7 +169,10 @@ function refreshFreeSlots() {
 
     slotSelect.append('<option value="">Loading...</option>');
 
-    $.get('/Appointments/GetFreeSlots', { doctorId, date }, function (response) {
+    const params = { doctorId, date };
+    if (appointmentId > 0) params.excludeAppointmentId = appointmentId;
+
+    $.get('/Appointments/GetFreeSlots', params, function (response) {
         slotSelect.empty();
 
         if (!response.success) {
@@ -154,20 +188,25 @@ function refreshFreeSlots() {
 
         slotSelect.append('<option value="">Select a free slot</option>');
         slots.forEach(s => slotSelect.append(`<option value="${s.value}">${s.label}</option>`));
+
+        if (preselectValue) {
+            slotSelect.val(preselectValue);
+        }
     }).fail(() => {
         slotSelect.empty();
         slotSelect.append('<option value="">Could not load slots</option>');
     });
 }
 
-// BOOK
-
 function bookAppointment() {
     const form = $('#appointmentForm');
     if (!form.valid()) return;
 
+    const appointmentId = parseInt(getVal('AppointmentID')) || 0;
+    const url = appointmentId > 0 ? '/Appointments/Edit' : '/Appointments/Create';
+
     $.ajax({
-        url: '/Appointments/Create',
+        url,
         method: 'POST',
         headers: { RequestVerificationToken: getAntiForgeryToken() },
         data: form.serialize(),
@@ -177,14 +216,12 @@ function bookAppointment() {
                 return;
             }
             bootstrap.Modal.getInstance(document.getElementById('appointmentModal'))?.hide();
-            showSuccess('Appointment booked.');
+            showSuccess(appointmentId > 0 ? 'Appointment updated.' : 'Appointment booked.');
             refreshAppointmentsTable();
         },
-        error: () => showError('Could not book appointment.')
+        error: () => showError('Could not save appointment.')
     });
 }
-
-// CANCEL / DELETE
 
 function confirmCancelAppointment(id) {
     Swal.fire({

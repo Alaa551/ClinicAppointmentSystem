@@ -1,5 +1,3 @@
-// Shared helpers used across doctors.js / patients.js / appointments.js
-
 function getAntiForgeryToken() {
     const el = document.querySelector('input[name="__RequestVerificationToken"]');
     return el ? el.value : '';
@@ -14,10 +12,6 @@ function getVal(id) {
     return ($('#' + id).val() || '').trim();
 }
 
-// Client-side validation now comes from jQuery Validation Unobtrusive,
-// wired automatically off the data-val-* attributes that asp-for /
-// asp-validation-for generate from each ViewModel's DataAnnotations.
-// Call this only to clear stale server-side error text before a fresh submit.
 function clearValidationErrors(formId) {
     $('#' + formId).find('[data-valmsg-for]').text('');
 }
@@ -34,8 +28,9 @@ function showError(msg) {
     toast.fire({ icon: 'error', title: msg || 'Something went wrong.' });
 }
 
-// Date helpers: flatpickr inputs display "dd-mm-yyyy",
-// but the server expects ISO ("yyyy-mm-dd").
+function refreshIcons() {
+    if (typeof feather !== 'undefined') feather.replace();
+}
 
 function parseDateFromInput(displayValue) {
     if (!displayValue) return null;
@@ -54,9 +49,6 @@ function formatDateForInput(isoValue) {
     return `${day}-${month}-${year}`;
 }
 
-// Country-code phone input (intl-tel-input), matching the pattern used
-// elsewhere in the system. Returns the iti instance so callers can read
-// iti.getNumber() when saving.
 function initPhoneInput(inputId) {
     const phoneInput = document.getElementById(inputId);
     if (!phoneInput || !window.intlTelInput) return null;
@@ -78,25 +70,71 @@ function initPhoneInput(inputId) {
     return iti;
 }
 
-// Simple Bootstrap-styled DataTable init (client filtering only, no
-// server paging) — matches the lightweight config used across the system.
 function initSimpleDataTable(tableId, options) {
-    return $('#' + tableId).DataTable(Object.assign({
+    const callerDrawCallback = options.drawCallback;
+    const callerInitComplete = options.initComplete;
+    const ajaxUrl = options.ajax.url;
+
+    const merged = Object.assign({
+        serverSide: true,
+        processing: true,
         bFilter: true,
-        sDom: 'fBtlpi',
-        ordering: true,
+        sDom: 'lfrtip',
+        ordering: false,
         pageLength: 10,
-        deferRender: true,
         language: {
-            search: ' ',
-            sLengthMenu: '_MENU_',
-            searchPlaceholder: 'Search...',
             info: '_START_ - _END_ of _TOTAL_ items',
             emptyTable: 'No records found',
             paginate: {
-                previous: '<i class="ti ti-chevron-left"></i>',
-                next: '<i class="ti ti-chevron-right"></i>'
+                previous: '<i data-feather="chevron-left"></i>',
+                next: '<i data-feather="chevron-right"></i>'
             }
         }
-    }, options));
+    }, options);
+
+    merged.ajax = function (requestData, callback) {
+        const pageNumber = Math.floor(requestData.start / requestData.length) + 1;
+        const pageSize = requestData.length;
+        const search = requestData.search.value;
+
+        $.get(ajaxUrl, { pageNumber, pageSize, search }, function (response) {
+            callback({
+                draw: requestData.draw,
+                recordsTotal: response.totalCount,
+                recordsFiltered: response.totalCount,
+                data: response.items
+            });
+        });
+    };
+
+    merged.drawCallback = function () {
+        refreshIcons();
+        if (callerDrawCallback) callerDrawCallback.apply(this, arguments);
+    };
+
+    merged.initComplete = function () {
+        const wrapper = $(this).closest('.dataTables_wrapper');
+        if (!wrapper.find('.dt-footer-row').length) {
+            wrapper.find('.dataTables_info')
+                .add(wrapper.find('.dataTables_paginate'))
+                .wrapAll('<div class="dt-footer-row"></div>');
+        }
+        if (callerInitComplete) callerInitComplete.apply(this, arguments);
+    };
+
+    return $('#' + tableId).DataTable(merged);
+}
+
+function initGridSearch(inputId, getTable) {
+    const input = $('#' + inputId);
+    let debounceTimer;
+
+    input.on('input', function () {
+        clearTimeout(debounceTimer);
+        const value = this.value;
+        debounceTimer = setTimeout(() => {
+            const table = getTable();
+            if (table) table.search(value).draw();
+        }, 250);
+    });
 }

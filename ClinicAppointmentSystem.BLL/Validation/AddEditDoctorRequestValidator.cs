@@ -11,9 +11,8 @@ namespace ClinicAppointmentSystem.BLL.Validation
                 .NotEmpty().WithMessage("Doctor name is required.")
                 .MaximumLength(100);
 
-            RuleFor(x => x.Specialization)
-                .NotEmpty().WithMessage("Specialization is required.")
-                .MaximumLength(100);
+            RuleFor(x => x.SpecializationID)
+                .GreaterThan(0).WithMessage("Specialization is required.");
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")
@@ -24,7 +23,6 @@ namespace ClinicAppointmentSystem.BLL.Validation
                 .EmailAddress().WithMessage("Enter a valid email address.")
                 .MaximumLength(100);
 
-            // DoctorID only matters on update - 0 means creating new, which is valid
             RuleFor(x => x.DoctorID)
                 .GreaterThanOrEqualTo(0);
         }

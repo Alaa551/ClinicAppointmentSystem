@@ -1,13 +1,13 @@
 @model ClinicAppointmentSystem.PL.Models.DoctorFormViewModel
 
-<div class="modal fade" id="doctorModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="doctorModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="doctorModalTitle">Add doctor</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h4 class="modal-title" id="doctorModalTitle">Add doctor</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="doctorForm">
                     <input type="hidden" asp-for="DoctorID" />
                     <div class="mb-3">
@@ -16,9 +16,11 @@
                         <span asp-validation-for="Name" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Specialization" class="form-label"></label>
-                        <input asp-for="Specialization" class="form-control" />
-                        <span asp-validation-for="Specialization" class="text-danger small"></span>
+                        <label asp-for="SpecializationID" class="form-label"></label>
+                        <select asp-for="SpecializationID" class="form-select" id="DoctorSpecialization">
+                            <option value="">Select</option>
+                        </select>
+                        <span asp-validation-for="SpecializationID" class="text-danger small"></span>
                     </div>
                     <div class="mb-3">
                         <label asp-for="PhoneNumber" class="form-label"></label>
@@ -37,8 +39,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveDoctor()">Save</button>
+                <button type="button" class="btn btn-cancel waves-effect" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary waves-effect waves-light" onclick="saveDoctor()">Save</button>
             </div>
         </div>
     </div>

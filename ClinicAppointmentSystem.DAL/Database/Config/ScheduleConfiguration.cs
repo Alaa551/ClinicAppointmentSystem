@@ -1,4 +1,4 @@
-﻿using ClinicAppointmentSystem.DAL.Database.Entities;
+using ClinicAppointmentSystem.DAL.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +16,7 @@ namespace ClinicAppointmentSystem.DAL.Database.Config
                 .HasConversion<string>()
                 .HasMaxLength(20);
 
+            builder.HasIndex(s => new { s.DoctorID, s.DayOfWeek }).IsUnique();
         }
     }
 }

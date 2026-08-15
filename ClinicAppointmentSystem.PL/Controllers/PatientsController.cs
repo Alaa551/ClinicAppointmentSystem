@@ -1,11 +1,12 @@
 using ClinicAppointmentSystem.BLL.DTOs;
 using ClinicAppointmentSystem.BLL.Services.Abstraction;
 using ClinicAppointmentSystem.PL.Models;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicAppointmentSystem.PL.Controllers
 {
-    public class PatientsController : BaseApiController
+    public class PatientsController : Controller
     {
         private readonly IPatientService _patientService;
 
@@ -14,43 +15,45 @@ namespace ClinicAppointmentSystem.PL.Controllers
             _patientService = patientService;
         }
 
-        // GET: /Patients
         public IActionResult Index()
         {
             return View();
         }
 
-        // GET: /Patients/GetAll -> feeds the grid
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 10, string search = "")
         {
-            return await ExecuteAsync(async () =>
+            var result = await _patientService.GetAllAsync(pageNumber, pageSize, search);
+            return Json(new
             {
-                var patients = await _patientService.GetAllAsync();
-                return (object)patients;
+                totalCount = result.TotalCount,
+                items = result.Items
             });
         }
 
-        // GET: /Patients/GetById?id=5 -> feeds the edit modal
         [HttpGet]
         public async Task<IActionResult> GetById(int id)
         {
-            return await ExecuteAsync(async () =>
+            var patient = await _patientService.GetByIdAsync(id);
+            return Json(new
             {
-                var patient = await _patientService.GetByIdAsync(id);
-                return (object)patient;
+                success = true,
+                data = patient
             });
         }
 
-        // POST: /Patients/Add  (form-encoded, bound via DataAnnotations on PatientFormViewModel)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Add(PatientFormViewModel model)
         {
             if (!ModelState.IsValid)
-                return Fail(GetFirstModelError());
+                return Json(new
+                {
+                    success = false,
+                    message = GetFirstModelError()
+                });
 
-            return await ExecuteAsync(async () =>
+            try
             {
                 var request = new AddEditPatientRequest
                 {
@@ -62,19 +65,42 @@ namespace ClinicAppointmentSystem.PL.Controllers
                     Address = model.Address
                 };
                 var patient = await _patientService.AddAsync(request);
-                return (object)patient;
-            });
+                return Json(new
+                {
+                    success = true,
+                    data = patient
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage))
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
-        // POST: /Patients/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(PatientFormViewModel model)
         {
             if (!ModelState.IsValid)
-                return Fail(GetFirstModelError());
+                return Json(new
+                {
+                    success = false,
+                    message = GetFirstModelError()
+                });
 
-            return await ExecuteAsync(async () =>
+            try
             {
                 var request = new AddEditPatientRequest
                 {
@@ -86,16 +112,63 @@ namespace ClinicAppointmentSystem.PL.Controllers
                     Address = model.Address
                 };
                 var patient = await _patientService.EditAsync(request);
-                return (object)patient;
-            });
+                return Json(new
+                {
+                    success = true,
+                    data = patient
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage))
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
-        // POST: /Patients/Delete?id=5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            return await ExecuteAsync(async () => await _patientService.DeleteAsync(id));
+            try
+            {
+                await _patientService.DeleteAsync(id);
+                return Json(new
+                {
+                    success = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+        private string GetFirstModelError()
+        {
+            foreach (var entry in ModelState.Values)
+            {
+                foreach (var error in entry.Errors)
+                {
+                    if (!string.IsNullOrWhiteSpace(error.ErrorMessage))
+                        return error.ErrorMessage;
+                }
+            }
+            return "Please check the form for errors.";
         }
     }
 }

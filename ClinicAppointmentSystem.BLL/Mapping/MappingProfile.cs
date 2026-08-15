@@ -8,18 +8,19 @@ namespace ClinicAppointmentSystem.BLL.Mapping
     {
         public MappingProfile()
         {
-            // ---- Appointment ----
             CreateMap<Appointment, AppointmentDto>()
                 .ForMember(dest => dest.PatientName, opt => opt.MapFrom(src => src.Patient.Name))
                 .ForMember(dest => dest.DoctorName, opt => opt.MapFrom(src => src.Doctor.Name));
 
-            // ---- Doctor ----
-            CreateMap<Doctor, DoctorDto>();
+            CreateMap<Doctor, DoctorDto>()
+                .ForMember(dest => dest.SpecializationName, opt => opt.MapFrom(src => src.Specialization.Name));
             CreateMap<AddEditDoctorRequest, Doctor>();
 
-            // ---- Patient ----
             CreateMap<Patient, PatientDto>();
             CreateMap<AddEditPatientRequest, Patient>();
+
+            CreateMap<Schedule, ScheduleDto>();
+            CreateMap<AddEditScheduleRequest, Schedule>();
         }
     }
 }

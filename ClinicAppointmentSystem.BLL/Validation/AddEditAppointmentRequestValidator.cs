@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace ClinicAppointmentSystem.BLL.Validation
 {
-    public class CreateAppointmentRequestValidator : AbstractValidator<CreateAppointmentRequest>
+    public class AddEditAppointmentRequestValidator : AbstractValidator<AddEditAppointmentRequest>
     {
-        public CreateAppointmentRequestValidator()
+        public AddEditAppointmentRequestValidator()
         {
             RuleFor(x => x.DoctorID)
                 .GreaterThan(0).WithMessage("A doctor must be selected.");

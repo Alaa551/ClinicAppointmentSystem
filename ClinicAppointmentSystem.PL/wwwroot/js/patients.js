@@ -1,5 +1,3 @@
-// Patient grid (Patients/Index) + the shared Add/Edit patient modal
-// (also used from the Appointments booking modal via the "+" button)
 
 let patientsTable = null;
 let patientPhoneIti = null;
@@ -10,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (document.getElementById('patientsTable')) {
         initPatientsTable();
+        initGridSearch('patientSearchInput', () => patientsTable);
     }
 });
 
@@ -19,26 +18,25 @@ function initPatientModalDatePicker() {
     }
 }
 
-const genderLabels = { 0: 'Male', 1: 'Female' };
-
-// GRID
-
 function initPatientsTable() {
     patientsTable = initSimpleDataTable('patientsTable', {
-        ajax: { url: '/Patients/GetAll', dataSrc: 'data' },
+        ajax: { url: '/Patients/GetAll' },
         columns: [
             { data: 'name' },
             { data: 'birthDate', render: d => d ? new Date(d).toLocaleDateString() : '-' },
-            { data: 'gender', render: g => genderLabels[g] ?? g },
+            { data: 'gender' },
             { data: 'phoneNumber' },
             { data: 'address' },
             {
                 data: 'patientID',
                 orderable: false,
-                className: 'text-end',
                 render: id => `
-                    <i class="ti ti-edit action-icon me-3" onclick="openEditPatientModal(${id})" title="Edit"></i>
-                    <i class="ti ti-trash action-icon danger" onclick="confirmDeletePatient(${id})" title="Delete"></i>`
+                    <span class="action-btn action-btn-delete" onclick="confirmDeletePatient(${id})" title="Delete">
+                        <i data-feather="trash-2"></i>
+                    </span>
+                    <span class="action-btn action-btn-edit" onclick="openEditPatientModal(${id})" title="Edit">
+                        <i data-feather="edit"></i>
+                    </span>`
             }
         ]
     });
@@ -48,11 +46,11 @@ function refreshPatientsTable() {
     patientsTable?.ajax.reload(null, false);
 }
 
-// ADD / EDIT (modal is shared — lives in _Layout via _PatientModal partial)
-
 function openAddPatientModal() {
     clearPatientForm();
+
     document.getElementById('patientModalTitle').innerText = 'Add patient';
+
     new bootstrap.Modal(document.getElementById('patientModal')).show();
 }
 
@@ -123,8 +121,6 @@ function savePatient() {
         error: () => showError('Could not save patient.')
     });
 }
-
-// DELETE
 
 function confirmDeletePatient(id) {
     Swal.fire({

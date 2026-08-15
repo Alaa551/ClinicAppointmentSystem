@@ -1,17 +1,16 @@
 using ClinicAppointmentSystem.BLL.DTOs;
 using ClinicAppointmentSystem.BLL.Services.Abstraction;
 using ClinicAppointmentSystem.PL.Models;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicAppointmentSystem.PL.Controllers
 {
-    public class AppointmentsController : BaseApiController
+    public class AppointmentsController : Controller
     {
         private readonly IAppointmentService _appointmentService;
         private readonly IDoctorService _doctorService;
         private readonly IPatientService _patientService;
-
-        private const int AutoCompleteMaxResults = 10;
 
         public AppointmentsController(
             IAppointmentService appointmentService,
@@ -23,100 +22,220 @@ namespace ClinicAppointmentSystem.PL.Controllers
             _patientService = patientService;
         }
 
-        // GET: /Appointments -> grid page with the booking modal
         public IActionResult Index()
         {
             return View();
         }
 
-        // GET: /Appointments/GetAll -> feeds the grid
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(int pageNumber = 1, int pageSize = 10, string search = "")
         {
-            return await ExecuteAsync(async () =>
+            var result = await _appointmentService.GetAllAsync(pageNumber, pageSize, search);
+            return Json(new
             {
-                var appointments = await _appointmentService.GetAllAsync();
-                return (object)appointments;
+                totalCount = result.TotalCount,
+                items = result.Items
             });
         }
 
-        // GET: /Appointments/SearchDoctors?term=ah -> Select2 remote source.
-        // Empty term (dropdown opened without typing) still returns up to 10 active doctors.
+        [HttpGet]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var appointment = await _appointmentService.GetByIdAsync(id);
+            return Json(new
+            {
+                success = true,
+                data = appointment
+            });
+        }
+
         [HttpGet]
         public async Task<IActionResult> SearchDoctors(string term)
         {
-            return await ExecuteAsync(async () =>
+            var doctors = await _doctorService.SearchActiveDoctorsAutoComplete(term);
+            var results = doctors.Select(d => new { id = d.ID, text = d.Name });
+            return Json(new
             {
-                var doctors = await _doctorService.SearchActiveDoctorsAutoComplete(term);
-                var results = doctors.Take(AutoCompleteMaxResults).Select(d => new { id = d.ID, text = d.Name });
-                return (object)results;
+                success = true,
+                data = results
             });
         }
 
-        // GET: /Appointments/SearchPatients?term=sa -> Select2 remote source.
         [HttpGet]
         public async Task<IActionResult> SearchPatients(string term)
         {
-            return await ExecuteAsync(async () =>
+            var patients = await _patientService.SearchPatientsAutoComplete(term);
+            var results = patients.Select(p => new { id = p.ID, text = p.Name });
+            return Json(new
             {
-                var patients = await _patientService.SearchPatientsAutoComplete(term);
-                var results = patients.Take(AutoCompleteMaxResults).Select(p => new { id = p.ID, text = p.Name });
-                return (object)results;
+                success = true,
+                data = results
             });
         }
 
-        // GET: /Appointments/GetFreeSlots?doctorId=3&date=2026-08-20 -> feeds the slot dropdown
         [HttpGet]
-        public async Task<IActionResult> GetFreeSlots(int doctorId, DateTime date)
+        public async Task<IActionResult> GetFreeSlots(int doctorId, DateTime date, int? excludeAppointmentId)
         {
-            return await ExecuteAsync(async () =>
+            var slots = await _appointmentService.GetFreeSlotsAsync(doctorId, date, excludeAppointmentId);
+            var results = slots.Select(s => new
             {
-                var slots = await _appointmentService.GetFreeSlotsAsync(doctorId, date);
-                var results = slots.Select(s => new
-                {
-                    value = s.StartTime.ToString(@"hh\:mm"),
-                    label = $"{FormatTime(s.StartTime)} - {FormatTime(s.EndTime)}"
-                });
-                return (object)results;
+                value = s.StartTime.ToString(@"hh\:mm"),
+                label = $"{FormatTime(s.StartTime)} - {FormatTime(s.EndTime)}"
+            });
+            return Json(new
+            {
+                success = true,
+                data = results
             });
         }
 
-        // POST: /Appointments/Create  (form-encoded, bound via DataAnnotations on AppointmentFormViewModel)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AppointmentFormViewModel model)
         {
             if (!ModelState.IsValid)
-                return Fail(GetFirstModelError());
-
-            return await ExecuteAsync(async () =>
-            {
-                var request = new CreateAppointmentRequest
+                return Json(new
                 {
+                    success = false,
+                    message = GetFirstModelError()
+                });
+
+            try
+            {
+                var request = new AddEditAppointmentRequest
+                {
+                    AppointmentID = 0,
                     DoctorID = model.DoctorID,
                     PatientID = model.PatientID,
                     AppointmentDate = model.AppointmentDate.Value,
                     StartTime = TimeSpan.Parse(model.StartTime)
                 };
                 var appointment = await _appointmentService.CreateAppointmentAsync(request);
-                return (object)appointment;
-            });
+                return Json(new
+                {
+                    success = true,
+                    data = appointment
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage))
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
-        // POST: /Appointments/Cancel?id=5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(AppointmentFormViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return Json(new
+                {
+                    success = false,
+                    message = GetFirstModelError()
+                });
+
+            try
+            {
+                var request = new AddEditAppointmentRequest
+                {
+                    AppointmentID = model.AppointmentID,
+                    DoctorID = model.DoctorID,
+                    PatientID = model.PatientID,
+                    AppointmentDate = model.AppointmentDate.Value,
+                    StartTime = TimeSpan.Parse(model.StartTime)
+                };
+                var appointment = await _appointmentService.EditAppointmentAsync(request);
+                return Json(new
+                {
+                    success = true,
+                    data = appointment
+                });
+            }
+            catch (ValidationException ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage))
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(int id)
         {
-            return await ExecuteAsync(async () => await _appointmentService.CancelAsync(id));
+            try
+            {
+                await _appointmentService.CancelAsync(id);
+                return Json(new
+                {
+                    success = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
         }
 
-        // POST: /Appointments/Delete?id=5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            return await ExecuteAsync(async () => await _appointmentService.DeleteAsync(id));
+            try
+            {
+                await _appointmentService.DeleteAsync(id);
+                return Json(new
+                {
+                    success = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+        private string GetFirstModelError()
+        {
+            foreach (var entry in ModelState.Values)
+            {
+                foreach (var error in entry.Errors)
+                {
+                    if (!string.IsNullOrWhiteSpace(error.ErrorMessage))
+                        return error.ErrorMessage;
+                }
+            }
+            return "Please check the form for errors.";
         }
 
         private static string FormatTime(TimeSpan time)

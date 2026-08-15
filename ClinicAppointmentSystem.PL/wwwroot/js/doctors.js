@@ -1,25 +1,38 @@
-// Doctor grid (Doctors/Index) + the shared Add/Edit doctor modal
-// (also used from the Appointments booking modal via the "+" button)
-
 let doctorsTable = null;
 let doctorPhoneIti = null;
+let specializationsLoaded = false;
 
 document.addEventListener('DOMContentLoaded', function () {
     doctorPhoneIti = initPhoneInput('DoctorPhoneNumber');
+    loadSpecializations();
 
     if (document.getElementById('doctorsTable')) {
         initDoctorsTable();
+        initGridSearch('doctorSearchInput', () => doctorsTable);
     }
 });
 
-// GRID
+function loadSpecializations() {
+    $.get('/Doctors/GetSpecializations', function (response) {
+        if (!response.success) return;
+
+        const select = $('#DoctorSpecialization');
+        select.find('option:not(:first)').remove();
+
+        response.data.forEach(s => {
+            select.append(`<option value="${s.id}">${s.name}</option>`);
+        });
+
+        specializationsLoaded = true;
+    });
+}
 
 function initDoctorsTable() {
     doctorsTable = initSimpleDataTable('doctorsTable', {
-        ajax: { url: '/Doctors/GetAll', dataSrc: 'data' },
+        ajax: { url: '/Doctors/GetAll' },
         columns: [
             { data: 'name' },
-            { data: 'specialization' },
+            { data: 'specializationName' },
             { data: 'phoneNumber' },
             { data: 'email' },
             {
@@ -31,10 +44,16 @@ function initDoctorsTable() {
             {
                 data: 'doctorID',
                 orderable: false,
-                className: 'text-end',
                 render: id => `
-                    <i class="ti ti-edit action-icon me-3" onclick="openEditDoctorModal(${id})" title="Edit"></i>
-                    <i class="ti ti-trash action-icon danger" onclick="confirmDeleteDoctor(${id})" title="Delete"></i>`
+                    <span class="action-btn action-btn-delete" onclick="confirmDeleteDoctor(${id})" title="Delete">
+                        <i data-feather="trash-2"></i>
+                    </span>
+                    <span class="action-btn action-btn-edit" onclick="openEditDoctorModal(${id})" title="Edit">
+                        <i data-feather="edit"></i>
+                    </span>
+                    <span class="action-btn action-btn-view" onclick="viewDoctor(${id})" title="View details">
+                        <i data-feather="eye"></i>
+                    </span>`
             }
         ]
     });
@@ -44,11 +63,15 @@ function refreshDoctorsTable() {
     doctorsTable?.ajax.reload(null, false);
 }
 
-// ADD / EDIT (modal is shared — lives in _Layout via _DoctorModal partial)
+function viewDoctor(id) {
+    window.location.href = `/Doctors/Details/${id}`;
+}
 
 function openAddDoctorModal() {
     clearDoctorForm();
+
     document.getElementById('doctorModalTitle').innerText = 'Add doctor';
+
     new bootstrap.Modal(document.getElementById('doctorModal')).show();
 }
 
@@ -62,7 +85,7 @@ function openEditDoctorModal(id) {
         const doctor = response.data;
         setVal('DoctorID', doctor.doctorID);
         setVal('Name', doctor.name);
-        setVal('Specialization', doctor.specialization);
+        setVal('DoctorSpecialization', doctor.specializationID);
         doctorPhoneIti ? doctorPhoneIti.setNumber(doctor.phoneNumber || '') : setVal('DoctorPhoneNumber', doctor.phoneNumber);
         setVal('Email', doctor.email);
         $('#IsActive').prop('checked', doctor.isActive);
@@ -75,7 +98,7 @@ function openEditDoctorModal(id) {
 function clearDoctorForm() {
     setVal('DoctorID', '0');
     setVal('Name', '');
-    setVal('Specialization', '');
+    setVal('DoctorSpecialization', '');
     doctorPhoneIti ? doctorPhoneIti.setNumber('') : setVal('DoctorPhoneNumber', '');
     setVal('Email', '');
     $('#IsActive').prop('checked', true);
@@ -119,8 +142,6 @@ function saveDoctor() {
         error: () => showError('Could not save doctor.')
     });
 }
-
-// DELETE
 
 function confirmDeleteDoctor(id) {
     Swal.fire({

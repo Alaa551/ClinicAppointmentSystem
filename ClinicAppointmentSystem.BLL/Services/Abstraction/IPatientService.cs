@@ -4,7 +4,7 @@ namespace ClinicAppointmentSystem.BLL.Services.Abstraction
 {
     public interface IPatientService
     {
-        Task<IEnumerable<PatientDto>> GetAllAsync();
+        Task<PagedResult<PatientDto>> GetAllAsync(int pageNumber, int pageSize, string search);
         Task<PatientDto> GetByIdAsync(int id);
         Task<PatientDto> AddAsync(AddEditPatientRequest request);
         Task<PatientDto> EditAsync(AddEditPatientRequest request);

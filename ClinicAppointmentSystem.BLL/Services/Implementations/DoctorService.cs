@@ -4,6 +4,7 @@ using ClinicAppointmentSystem.BLL.Services.Abstraction;
 using ClinicAppointmentSystem.DAL.Database.Entities;
 using ClinicAppointmentSystem.DAL.UnitOfWork;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicAppointmentSystem.BLL.Services.Implementations
 {
@@ -20,15 +21,43 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
             _validator = validator;
         }
 
-        public async Task<IEnumerable<DoctorDto>> GetAllAsync()
+        public async Task<PagedResult<DoctorDto>> GetAllAsync(int pageNumber, int pageSize, string search)
         {
-            var doctors = await _unitOfWork.Doctors.GetAllAsync();
-            return _mapper.Map<IEnumerable<DoctorDto>>(doctors);
+            IQueryable<Doctor> query = _unitOfWork.Repository<Doctor>()
+                                                  .GetAll()
+                                                  .Include(d => d.Specialization);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(d =>
+                    d.Name.Contains(search) ||
+                    d.Email.Contains(search) ||
+                    d.PhoneNumber.Contains(search) ||
+                    d.Specialization.Name.Contains(search));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var doctors = await query
+                .OrderBy(d => d.Name)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<DoctorDto>
+            {
+                Items = _mapper.Map<IEnumerable<DoctorDto>>(doctors),
+                TotalCount = totalCount
+            };
         }
 
         public async Task<DoctorDto> GetByIdAsync(int id)
         {
-            var doctor = await _unitOfWork.Doctors.GetByIdAsync(id);
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .Find(d => d.DoctorID == id)
+                .Include(d => d.Specialization)
+                .FirstOrDefaultAsync();
+
             return _mapper.Map<DoctorDto>(doctor);
         }
 
@@ -39,10 +68,10 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
                 throw new ValidationException(validationResult.Errors);
 
             var doctor = _mapper.Map<Doctor>(request);
-            await _unitOfWork.Doctors.AddAsync(doctor);
+            await _unitOfWork.Repository<Doctor>().AddAsync(doctor);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<DoctorDto>(doctor);
+            return await GetByIdAsync(doctor.DoctorID);
         }
 
         public async Task<DoctorDto> EditAsync(AddEditDoctorRequest request)
@@ -51,41 +80,45 @@ namespace ClinicAppointmentSystem.BLL.Services.Implementations
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors);
 
-            var doctor = await _unitOfWork.Doctors.GetByIdAsync(request.DoctorID);
+            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(request.DoctorID);
             if (doctor == null)
                 throw new KeyNotFoundException("Doctor not found.");
 
             doctor.Name = request.Name;
-            doctor.Specialization = request.Specialization;
+            doctor.SpecializationID = request.SpecializationID;
             doctor.PhoneNumber = request.PhoneNumber;
             doctor.Email = request.Email;
             doctor.IsActive = request.IsActive;
 
-            _unitOfWork.Doctors.Update(doctor);
+            _unitOfWork.Repository<Doctor>().Update(doctor);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<DoctorDto>(doctor);
+            return await GetByIdAsync(doctor.DoctorID);
         }
 
         public async Task DeleteAsync(int id)
         {
-            var doctor = await _unitOfWork.Doctors.GetByIdAsync(id);
+            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
             if (doctor == null)
                 throw new KeyNotFoundException("Doctor not found.");
 
-            _unitOfWork.Doctors.Remove(doctor);
+            _unitOfWork.Repository<Doctor>().Remove(doctor);
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<LookupModel>> SearchActiveDoctorsAutoComplete(string term)
+        public async Task<IEnumerable<LookupModel>> SearchActiveDoctorsAutoComplete(string term, int maxResults = 10)
         {
-            var doctors = await _unitOfWork.Doctors.SearchActiveDoctorsAutoComplete(term);
+            var query = _unitOfWork.Repository<Doctor>().Find(d => d.IsActive);
 
-            return doctors.Select(d => new LookupModel
-            {
-                ID = d.DoctorID,
-                Name = d.Name
-            });
+            if (!string.IsNullOrWhiteSpace(term))
+                query = query.Where(d => d.Name.Contains(term));
+
+            var doctors = await query
+                .OrderBy(d => d.Name)
+                .Take(maxResults)
+                .ToListAsync();
+
+            return doctors.Select(d => new LookupModel { ID = d.DoctorID, Name = d.Name });
         }
     }
 }

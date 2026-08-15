@@ -1,9 +1,8 @@
 using ClinicAppointmentSystem.DAL.Database.Data;
-using ClinicAppointmentSystem.DAL.Repositories.Abstraction;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace ClinicAppointmentSystem.DAL.Repositories.Implementations
+namespace ClinicAppointmentSystem.DAL.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
@@ -16,13 +15,11 @@ namespace ClinicAppointmentSystem.DAL.Repositories.Implementations
             _dbSet = context.Set<T>();
         }
 
+        public IQueryable<T> GetAll() => _dbSet.AsNoTracking();
+
+        public IQueryable<T> Find(Expression<Func<T, bool>> predicate) => _dbSet.AsNoTracking().Where(predicate);
+
         public async Task<T> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
-
-        public async Task<IEnumerable<T>> GetAllAsync() =>
-            await _dbSet.AsNoTracking().ToListAsync();
-
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate) =>
-            await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
 
         public async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
 

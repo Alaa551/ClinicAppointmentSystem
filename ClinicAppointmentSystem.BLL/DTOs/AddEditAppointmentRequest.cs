@@ -1,7 +1,8 @@
 namespace ClinicAppointmentSystem.BLL.DTOs
 {
-    public class CreateAppointmentRequest
+    public class AddEditAppointmentRequest
     {
+        public int AppointmentID { get; set; }
         public int DoctorID { get; set; }
         public int PatientID { get; set; }
         public DateTime AppointmentDate { get; set; }

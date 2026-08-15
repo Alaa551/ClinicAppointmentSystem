@@ -1,4 +1,4 @@
-﻿using ClinicAppointmentSystem.DAL.Database.Entities;
+using ClinicAppointmentSystem.DAL.Database.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,9 +13,10 @@ namespace ClinicAppointmentSystem.DAL.Database.Config
             builder.HasKey(a => a.AppointmentID);
 
             builder.Property(a => a.Status)
-                    .HasConversion<string>()
-                    .HasMaxLength(20);
+                .HasConversion<string>()
+                .HasMaxLength(20);
 
+            builder.HasIndex(a => new { a.DoctorID, a.AppointmentDate });
         }
     }
 }

@@ -10,39 +10,38 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.7.1/build/css/intlTelInput.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
 
+    <div class="clinic-topbar-accent"></div>
+
     <aside class="clinic-sidebar">
         <div class="brand">
-            <i class="ti ti-stethoscope"></i>
+            <span class="brand-icon"><i data-feather="activity"></i></span>
             <span>Clinic system</span>
         </div>
-        <nav class="nav flex-column">
+        <nav>
             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Appointments" ? "active" : "")"
                asp-controller="Appointments" asp-action="Index">
-                <i class="ti ti-calendar-event"></i> Appointments
+                <i data-feather="calendar"></i> Appointments
             </a>
             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Doctors" ? "active" : "")"
                asp-controller="Doctors" asp-action="Index">
-                <i class="ti ti-user-heart"></i> Doctors
+                <i data-feather="user-check"></i> Doctors
             </a>
             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Patients" ? "active" : "")"
                asp-controller="Patients" asp-action="Index">
-                <i class="ti ti-users"></i> Patients
+                <i data-feather="users"></i> Patients
             </a>
         </nav>
     </aside>
 
     <div class="clinic-content">
-        <div class="clinic-topbar">
+        <div class="page-header">
             <h4>@ViewData["Title"]</h4>
         </div>
-        <div class="clinic-page-body">
-            @RenderBody()
-        </div>
+        @RenderBody()
     </div>
 
     <partial name="_DoctorModal" model="new ClinicAppointmentSystem.PL.Models.DoctorFormViewModel()" />
@@ -59,16 +58,18 @@
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.7.1/build/js/intlTelInput.min.js"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- jQuery Validation: works automatically off the data-val-* attributes
-         that asp-for / asp-validation-for generate from the ViewModel's
-         DataAnnotations — no manual rules needed in JS. -->
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@4.0.0/dist/jquery.validate.unobtrusive.min.js"></script>
 
     <script src="~/js/common.js"></script>
     <script src="~/js/doctors.js"></script>
     <script src="~/js/patients.js"></script>
+
+    <script>
+        feather.replace();
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
