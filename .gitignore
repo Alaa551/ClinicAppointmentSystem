@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# keep production connection strings out of the repo 
+ClinicAppointmentSystem.PL/appsettings.json
+ClinicAppointmentSystem.PL/appsettings.*.json
+!ClinicAppointmentSystem.PL/appsettings.Development.json
